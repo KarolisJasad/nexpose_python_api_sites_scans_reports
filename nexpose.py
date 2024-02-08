@@ -353,9 +353,15 @@ if __name__ == "__main__":
     REPORT_FORMAT = configs['report_format']
     REPORT_TEMPLATE = configs['report_template']
     SAVE_FILENAME = configs['save_filename']
-    SCAN_NAME = "" # Name of the scan
-    TARGET_IP = "" # IP or Domain of targeted scan
-    DESCRIPTION = "" # Description of the scan
+    DESCRIPTION = "Scan description" # Description of the scan
+    
+    parser = argparse.ArgumentParser(description="Run a scan with specified parameters")
+    parser.add_argument('-s', '--scan-name', type=str, required=True, help="Name of the scan")
+    parser.add_argument('-t', '--target', type=str, required=True, help="IP or Domain of targeted scan")
+    args = parser.parse_args()
+
+    SCAN_NAME = args.scan_name
+    TARGET_IP = args.target
 
     # Start Nexpose API session
     session = NexposeSession(API_URL, USERNAME, PASSWORD)
@@ -367,13 +373,16 @@ if __name__ == "__main__":
     # Create site
     site.create_site(SCAN_NAME, DESCRIPTION, TARGET_IP, TEMPLATE_ID)
     site_id = site.get_site_id(SCAN_NAME)
+    print(site_id)
     
     # Start scan
     scan_id = scan.start_scan(site_id)
+    print(scan_id)
     scan.wait_for_scan_completion(scan_id)
     
     # Generate report
     report_id = report_generation.create_report(site_id, scan_id, SCAN_NAME, REPORT_FORMAT, REPORT_TEMPLATE)
+    print(report_id)
     report_generation.start_report_generation(report_id)
     timestamp = report_generation.wait_for_report_completion(report_id)
     
