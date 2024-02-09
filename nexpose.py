@@ -1,9 +1,9 @@
 import time
 import os
-import urllib3
 import string
 import random
 import argparse
+import urllib3
 import requests
 from requests.auth import HTTPBasicAuth
 from config_example import configs
@@ -46,7 +46,7 @@ class Site(NexposeSession):
         If it exists, gets its ID otherwise returns None.
         """
         scan_url = f'{self.api_url}/sites'
-        response = self.session.get(scan_url)      
+        response = self.session.get(scan_url) 
         if response.status_code in [200, 201, 202]:
             try:
                 response_json = response.json()
@@ -117,9 +117,8 @@ class Scan(NexposeSession):
         if response.status_code in [200, 201, 202]:
             print("Scan started successfully")
             return self.get_last_scan_id()
-        else:
-            print("Failed to start scan")
-            return None
+        print("Scan didnt start")
+        return None
 
     def get_last_scan_id(self):
         """
@@ -226,9 +225,8 @@ class ReportGeneration(NexposeSession):
             report_id = report_config_json.get("id")
             print("Report configuration created successfully, report ID:", report_id)
             return report_id
-        else:
-            print("Failed to create report configuration")
-            return None
+        print("Failed to create report configuration")
+        return None
 
     def get_existing_report(self, site_id):
         """
@@ -248,7 +246,7 @@ class ReportGeneration(NexposeSession):
                 response_json = response.json()
                 for report in response_json.get("resources", []):
                     if site_id in report.get("scope", {}).get("sites", []):
-                        return report.get("id"),
+                        return report.get("id")
             except ValueError:
                 print("Failed to parse JSON response from the server.")
         return None
@@ -333,8 +331,8 @@ class ReportDownloader(NexposeSession):
                     file.write(content)
             print(f"Report downloaded and saved to {save_path}")
             return save_path
-        else:
-            print(f"Failed to download report. Status code: {response.status_code}")
+        print(f"Failed to download report. Status code: {response.status_code}")
+        return None
 
 class UtilityFunctions:
     """
