@@ -1,3 +1,4 @@
+# Nexpose configs
 configs = {
     'nexpose_url': 'https://localhost:3780/api/3',
     'nexpose_user': '',
