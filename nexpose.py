@@ -1,3 +1,4 @@
+# Nexpose script
 import time
 import os
 import string
@@ -46,7 +47,7 @@ class Site(NexposeSession):
         If it exists, gets its ID otherwise returns None.
         """
         scan_url = f'{self.api_url}/sites'
-        response = self.session.get(scan_url) 
+        response = self.session.get(scan_url)
         if response.status_code in [200, 201, 202]:
             try:
                 response_json = response.json()
