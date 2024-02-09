@@ -1,10 +1,11 @@
-import requests
-from requests.auth import HTTPBasicAuth
 import time
 import os
 import urllib3
 import string
 import random
+import argparse
+import requests
+from requests.auth import HTTPBasicAuth
 from config_example import configs
 
 # Disable insecure request warnings
@@ -18,7 +19,7 @@ class NexposeSession:
         """
         Makes a connection to Nexpose API
         
-        Inputs:\n
+        Args:\n
         api_url = the url of the nexpose api. Ex:
         https://localhost:3780/api/3 \n
         username = the username of the nexpose user
@@ -38,9 +39,9 @@ class Site(NexposeSession):
         """
         Gets the ID of a specific site
         
-        Inputs:\n
+        Args:\n
         name = the name of the site we want the id of.
-        
+
         Takes name as an input to check if such a site exists.
         If it exists, gets its ID otherwise returns None.
         """
@@ -61,7 +62,7 @@ class Site(NexposeSession):
         Creates a site based on given inputs.
         Checks if such a site exists.
         
-        Inputs:\n
+        Args:\n
         name = the name of the site.\n
         description = description of the site.\n
         target_ip = ip we want to scan.\n
@@ -103,7 +104,7 @@ class Scan(NexposeSession):
         """
         Starts a scan on a given site.
         
-        Inputs:\n
+        Args:\n
         site_id = the ID of a site we wish to scan.
         
         If scan is started returns the scan id
@@ -140,7 +141,7 @@ class Scan(NexposeSession):
         scans_url = f'{self.api_url}/scans'
         status_codes = [200, 201, 202]
         response = self.session.get(scans_url)
-        
+
         if response.status_code in status_codes:
             try:
                 scan_json = response.json()
@@ -163,7 +164,7 @@ class Scan(NexposeSession):
         """
         Waits for scan completion.
         
-        Inputs:\n
+        Args:\n
         scan_id = the id of the scan we wait for completion
         
         Function is needed if we want to fully automate
@@ -194,7 +195,7 @@ class ReportGeneration(NexposeSession):
         Creates the report based on given inputs if the report doesn't exist.
         Doesn't generate it yet. Just the configs of the report.
         
-        Inputs:\n
+        Args:\n
         site_id = the ID of the site we want a report\n
         scan_id = the ID of the scan of the site we want a report\n
         name = name of the report\n
@@ -217,7 +218,7 @@ class ReportGeneration(NexposeSession):
             "scope": {
                 "sites": [site_id]
             },
-            "template": template
+            "template": template,
         }
         response = self.session.post(report_config_url, json=report_data)
         if response.status_code in [200, 201, 202]:
@@ -233,7 +234,7 @@ class ReportGeneration(NexposeSession):
         """
         Checks if a report already exists.
         
-        Inputs:
+        Args:
         site_id = the ID of the site we want to check
         
         If a report already exists
@@ -271,7 +272,7 @@ class ReportGeneration(NexposeSession):
         """
         Waits for the report to finish generating
         
-        Inputs:\n
+        Args:\n
         report_id = the id of a report that is generating.
         
         Keeps making requests to the latest report
@@ -300,8 +301,8 @@ class ReportDownloader(NexposeSession):
     def download_report(self, report_id, instance='latest', directory_name=None, address=None, save_filename='report.pdf'):
         """
         Downloads the report based on inputs
-        
-        Inputs:\n
+
+        Args:\n
         report_id = the id of a report we wish to download.\n
         instance = default set to download latest report.\n
         directory_name = name of the folder we want to save in.\n
@@ -354,14 +355,14 @@ if __name__ == "__main__":
     REPORT_TEMPLATE = configs['report_template']
     SAVE_FILENAME = configs['save_filename']
     DESCRIPTION = "Scan description" # Description of the scan
-    
+
     parser = argparse.ArgumentParser(description="Run a scan with specified parameters")
     parser.add_argument('-s', '--scan-name', type=str, required=True, help="Name of the scan")
     parser.add_argument('-t', '--target', type=str, required=True, help="IP or Domain of targeted scan")
     args = parser.parse_args()
 
-    SCAN_NAME = args.scan_name
-    TARGET_IP = args.target
+    SCAN_NAME = args.scan_name.strip().title()
+    TARGET_IP = args.target.strip().title()
 
     # Start Nexpose API session
     session = NexposeSession(API_URL, USERNAME, PASSWORD)
@@ -374,17 +375,17 @@ if __name__ == "__main__":
     site.create_site(SCAN_NAME, DESCRIPTION, TARGET_IP, TEMPLATE_ID)
     site_id = site.get_site_id(SCAN_NAME)
     print(site_id)
-    
+
     # Start scan
     scan_id = scan.start_scan(site_id)
     print(scan_id)
     scan.wait_for_scan_completion(scan_id)
-    
+
     # Generate report
     report_id = report_generation.create_report(site_id, scan_id, SCAN_NAME, REPORT_FORMAT, REPORT_TEMPLATE)
     print(report_id)
     report_generation.start_report_generation(report_id)
     timestamp = report_generation.wait_for_report_completion(report_id)
-    
+
     # Download report
     report_downloader.download_report(report_id, directory_name=timestamp, address=TARGET_IP, save_filename=SAVE_FILENAME)
